@@ -29,6 +29,7 @@ namespace FrostDuel.Editor {
                     var a=new PlayerAction{sessionId=s.sessionId,turnId=s.turnId,player=side,kind=kind,angle=42,power=.85f,aimPhase=1.1f};
                     var preview=Projectile.For(kind).Simulate(s,a,b);
                     Check(Vector2.Distance(preview.path[0],Projectile.ReleasePoint(s.players[side],side))<.00001f,"Arc starts at release: "+side+" / "+kind+" / "+wind+" / "+heat);
+                    a=JsonUtility.FromJson<PlayerAction>(JsonUtility.ToJson(a));
                     Check(rules.Apply(a,out var actual,out _)&&actual.path.Length==preview.path.Length,"Authority accepts previewed throw: "+side+" / "+kind+" / "+wind+" / "+heat);
                     for(int i=0;i<preview.path.Length;i++)maxError=Mathf.Max(maxError,Vector2.Distance(preview.path[i],actual.path[i]));
                 }

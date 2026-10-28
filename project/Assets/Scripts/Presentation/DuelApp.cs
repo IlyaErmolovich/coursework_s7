@@ -13,6 +13,7 @@ namespace FrostDuel {
         Vector2 origin,scroll;
         readonly AimGesture aim=new AimGesture();
         int finger=-1,lastTurn=-1;
+        string lastSessionId;
         ActionKind selected=ActionKind.Snowball;
         PlayerAction previewAction;
         ShotResult preview;
@@ -46,7 +47,7 @@ namespace FrostDuel {
         void Update() {
             Layout();
             if(session.Started)screen=ScreenKind.Game;
-            if(session.Display!=null&&session.Display.turnId!=lastTurn){lastTurn=session.Display.turnId;CancelAim();selected=ActionKind.Snowball;}
+            if(session.Display!=null&&(session.Display.turnId!=lastTurn||session.Display.sessionId!=lastSessionId)){lastTurn=session.Display.turnId;lastSessionId=session.Display.sessionId;CancelAim();selected=ActionKind.Snowball;}
             if(lastNotice!=session.Notice){lastNotice=session.Notice;noticeUntil=Time.unscaledTime+4;}
             UpdateFraming();
             if(!session.CanAct||confirmExit){CancelAim();return;}
