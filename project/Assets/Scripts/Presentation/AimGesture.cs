@@ -37,10 +37,12 @@ namespace FrostDuel {
     }
     public readonly struct DuelViewport {
         public readonly float Scale;
+        public readonly float Width;
         public readonly Vector2 Origin;
         public DuelViewport(Rect safeArea, float screenHeight) {
-            Scale=Mathf.Min(safeArea.width/1280f,safeArea.height/720f);
-            Origin=new Vector2(safeArea.x+(safeArea.width-1280*Scale)/2,
+            Scale=Mathf.Min(safeArea.width/1100f,safeArea.height/720f);
+            Width=safeArea.width/Scale;
+            Origin=new Vector2(safeArea.x,
                 screenHeight-safeArea.yMax+(safeArea.height-720*Scale)/2);
         }
         public Vector2 FromScreen(Vector2 p,float screenHeight) => (new Vector2(p.x,screenHeight-p.y)-Origin)/Scale;

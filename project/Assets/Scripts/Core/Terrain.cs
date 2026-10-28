@@ -10,8 +10,9 @@ namespace FrostDuel {
             for (int i = 0; i < h.Length; i++) {
                 float x = i * b.worldWidth / (h.Length - 1), mirror = Mathf.Min(x, b.worldWidth - x);
                 h[i] = 2.7f + .4f * Mathf.Sin(mirror * .7f + phase) + .2f * Mathf.Cos(mirror * 1.5f + phase);
-                if (Mathf.Abs(x-b.characterInset) < 1.5f) h[i] = left;
-                if (Mathf.Abs(x-(b.worldWidth-b.characterInset)) < 1.5f) h[i] = right;
+                float dl=Mathf.Abs(x-b.characterInset),dr=Mathf.Abs(x-(b.worldWidth-b.characterInset));
+                h[i]=Mathf.Lerp(h[i],left,1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.72f,1.65f,dl)));
+                h[i]=Mathf.Lerp(h[i],right,1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.72f,1.65f,dr)));
             }
             return h;
         }
