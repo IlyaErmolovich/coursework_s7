@@ -9,9 +9,14 @@ namespace FrostDuel {
         PrimitiveArt art;
         GUIStyle label,button,title,small,center,letter;
         Font font;
-        float scale,canvasWidth=1280,worldScale=40;
+        float scale,canvasWidth=1280,worldScale=DuelView.Scale;
         Vector2 origin,scroll;
         readonly AimGesture aim=new AimGesture();
+        readonly DuelView view=new DuelView();
+        bool resetView=true;
+        public DuelView View=>view;
+        public int VisiblePreviewCount=>DuelView.PreviewCount(preview);
+        public bool OpponentOffscreen { get { if(session.Display==null)return false;var p=session.Display.players[1-session.MyPlayer];var feet=World(new Vector2(p.x,p.groundY));return feet.x>canvasWidth-38||feet.x<38||feet.y<120||feet.y-2*worldScale>720; } }
         int finger=-1,lastTurn=-1;
         string lastSessionId;
         ActionKind selected=ActionKind.Snowball;
@@ -43,11 +48,11 @@ namespace FrostDuel {
         void OnDestroy(){art?.Dispose();}
         void Layout(){var v=new DuelViewport(Screen.safeArea,Screen.height);scale=v.Scale;origin=v.Origin;canvasWidth=v.Width;}
         Vector2 Pointer(Vector2 p)=>new DuelViewport(Screen.safeArea,Screen.height).FromScreen(p,Screen.height);
-        public Vector2 World(Vector2 p)=>new Vector2((canvasWidth-session.Balance.worldWidth*worldScale)/2+p.x*worldScale,720-p.y*worldScale);
+        public Vector2 World(Vector2 p)=>view.Project(p);
         void Update() {
             Layout();
             if(session.Started)screen=ScreenKind.Game;
-            if(session.Display!=null&&(session.Display.turnId!=lastTurn||session.Display.sessionId!=lastSessionId)){lastTurn=session.Display.turnId;lastSessionId=session.Display.sessionId;CancelAim();selected=ActionKind.Snowball;}
+            if(session.Display!=null&&(session.Display.turnId!=lastTurn||session.Display.sessionId!=lastSessionId)){resetView=lastSessionId!=session.Display.sessionId;lastTurn=session.Display.turnId;lastSessionId=session.Display.sessionId;CancelAim();selected=ActionKind.Snowball;}
             if(lastNotice!=session.Notice){lastNotice=session.Notice;noticeUntil=Time.unscaledTime+4;}
             UpdateFraming();
             if(!session.CanAct||confirmExit){CancelAim();return;}
@@ -73,15 +78,19 @@ namespace FrostDuel {
         }
         void UpdateFraming() {
             if(!session.Started)return;
-            float top=12.8f;var path=aim.Active?preview?.path:session.Animation?.path;
-            if(path!=null)foreach(var p in path)top=Mathf.Max(top,p.y+1.2f);
-            float target=Mathf.Min((canvasWidth-48)/session.Balance.worldWidth,570/top);
-            worldScale=Mathf.Lerp(worldScale,target,1-Mathf.Exp(-10*Time.unscaledDeltaTime));
+            view.Update(session.Display,session.Balance,session.MyPlayer,canvasWidth,session.Animation,session.AnimationTime,Time.unscaledDeltaTime,resetView);
+            resetView=false;
+        }
+        bool OnOwnCharacter(Vector2 point) {
+            if(session.Display==null)return false;
+            var p=session.Display.players[session.MyPlayer];var w=view.Unproject(point);
+            // Includes hood, arms and boots; both mirrored views use the same canonical silhouette bounds.
+            return Mathf.Abs(w.x-p.x)<=.78f&&w.y>=p.groundY-.12f&&w.y<=p.groundY+2.06f;
         }
         bool InField(Vector2 p)=>p.x>12&&p.x<canvasWidth-12&&p.y>120&&p.y<710;
         bool OverControls(Vector2 p)=>SnowButton.Contains(p)||IceButton.Contains(p)||WarmButton.Contains(p)||MenuButton.Contains(p);
         public bool CanStartAim(Vector2 p) {
-            if(!session.CanAct||confirmExit||!InField(p)||OverControls(p))return false;
+            if(!session.CanAct||!view.Ready||confirmExit||!InField(p)||OverControls(p))return false;
             foreach(var player in session.Display.players) {
                 Vector2 feet=World(new Vector2(player.x,player.groundY));
                 if(new Rect(feet.x-worldScale*.7f,feet.y-worldScale*2,worldScale*1.4f,worldScale*2.1f).Contains(p))return false;
@@ -89,8 +98,8 @@ namespace FrostDuel {
             return true;
         }
         // Used by real touch/mouse input and the runtime verification harness.
-        public void BeginAim(Vector2 p){if(!CanStartAim(p))return;aim.Begin(p,session.MyPlayer);RefreshPreview();}
-        public void MoveAim(Vector2 p){if(!aim.Active)return;aim.Move(p,Time.unscaledDeltaTime);RefreshPreview();}
+        public void BeginAim(Vector2 p){if(!CanStartAim(p))return;aim.Begin(p);RefreshPreview();}
+        public void MoveAim(Vector2 p){if(!aim.Active)return;if(OnOwnCharacter(p)){CancelAim();return;}aim.Move(p,Time.unscaledDeltaTime);RefreshPreview();}
         void RefreshPreview() {
             if(!aim.Active||!session.CanAct)return;
             previewAction=new PlayerAction{sessionId=session.Display.sessionId,turnId=session.Display.turnId,player=session.MyPlayer,
@@ -98,7 +107,7 @@ namespace FrostDuel {
             preview=Projectile.For(selected).Simulate(session.Display,previewAction,session.Balance);
         }
         public void EndAim(Vector2 p) {
-            bool release=aim.ReleaseAllowed(p)&&InField(p)&&!OverControls(p)&&session.CanAct&&!confirmExit;
+            bool release=!OnOwnCharacter(p)&&aim.ReleaseAllowed(p)&&InField(p)&&!OverControls(p)&&session.CanAct&&!confirmExit;
             aim.Cancel();finger=-1;
             if(release&&previewAction!=null)session.Act(selected,previewAction.angle,previewAction.power,previewAction.aimPhase);
         }
@@ -196,34 +205,36 @@ namespace FrostDuel {
             if(Button(new Rect(canvasWidth-325,596,245,50),"В меню"))BackToMenu();
         }
         void Game() {
-            var s=session.Display;if(s==null)return;var b=session.Balance;
+            var s=session.ImpactState??session.Display;if(s==null)return;var b=session.Balance;
             art.UpdateGround(s,b);
-            Vector2 left=World(new Vector2(0,PrimitiveArt.GroundHeight));
-            Image(new Rect(left.x,left.y,b.worldWidth*worldScale,PrimitiveArt.GroundHeight*worldScale),art.Ground,Color.white);
-            // Extend edge texels outside the playable world; no vertical cut-off when framing high arcs.
-            if(left.x>0) {
-                GUI.DrawTextureWithTexCoords(new Rect(0,left.y,left.x,PrimitiveArt.GroundHeight*worldScale),art.Ground,new Rect(0,0,1f/art.Ground.width,1));
-                GUI.DrawTextureWithTexCoords(new Rect(canvasWidth-left.x,left.y,left.x,PrimitiveArt.GroundHeight*worldScale),art.Ground,new Rect(1-1f/art.Ground.width,0,1f/art.Ground.width,1));
-            }
-            Snow(s.wind,s.blizzard);
+            float left=Mathf.Min(World(new Vector2(0,0)).x,World(new Vector2(b.worldWidth,0)).x);
+            float top=World(new Vector2(0,PrimitiveArt.GroundHeight)).y;
+            var groundRect=new Rect(left,top,b.worldWidth*worldScale,PrimitiveArt.GroundHeight*worldScale);
+            GUI.DrawTextureWithTexCoords(groundRect,art.Ground,new Rect(view.Viewer==0?0:1,0,view.Direction,1));
+            if(left>0)GUI.DrawTextureWithTexCoords(new Rect(0,top,left,groundRect.height),art.Ground,new Rect(view.Viewer==0?0:1-1f/art.Ground.width,0,1f/art.Ground.width,1));
+            if(groundRect.xMax<canvasWidth)GUI.DrawTextureWithTexCoords(new Rect(groundRect.xMax,top,canvasWidth-groundRect.xMax,groundRect.height),art.Ground,new Rect(view.Viewer==0?1-1f/art.Ground.width:0,0,1f/art.Ground.width,1));
+            Snow(s.wind*view.Direction,s.blizzard);
             for(int i=0;i<2;i++) {
                 var p=s.players[i];Vector2 feet=World(new Vector2(p.x,p.groundY));
                 float shake=p.warmth==0?Mathf.Sin(Time.unscaledTime*7)*.7f:0;
                 float armAngle=aim.Active&&i==session.MyPlayer&&previewAction!=null?Projectile.LaunchAngle(s,previewAction,b):25;
-                DrawFigure(feet+new Vector2(shake,0),worldScale,i,p.iceReady,p.warmth==0,armAngle);
+                DrawFigure(feet+new Vector2(shake,0),worldScale,i,p.iceReady,p.warmth==0,armAngle,i==session.MyPlayer?1:-1);
                 if(s.activePlayer==i&&!s.finished){Ellipse(new Rect(feet.x-28,feet.y+4,56,8),new Color(1,1,1,.35f));}
             }
             if(aim.Active)DrawAim();
             if(session.Animation!=null)DrawShot(session.Animation);
-            Stats(s.players[0],new Rect(24,18,332,92),0);
-            Stats(s.players[1],new Rect(canvasWidth-356,18,332,92),1);
+            int own=session.MyPlayer,enemy=1-own;
+            Stats(s.players[own],new Rect(24,18,332,92),own,true);
+            Stats(s.players[enemy],new Rect(canvasWidth-356,18,332,92),enemy,false);
             Round(new Rect(canvasWidth/2-190,18,380,78),20,panel);
-            string turn=s.finished?"МАТЧ ЗАВЕРШЁН":session.Paused?"ПАУЗА":session.Busy?"БРОСОК":session.CanAct?"ВАШ ХОД":"ХОД СОПЕРНИКА";
-            Text(new Rect(canvasWidth/2-180,22,360,32),turn,center);
-            Text(new Rect(canvasWidth/2-175,57,350,25),"Ход "+s.turnId+"  •  "+(session.Local?"игрок "+(s.activePlayer+1):session.MyPlayer==0?"вы слева":"вы справа"),new GUIStyle(small){alignment=TextAnchor.MiddleCenter},muted);
+            string turn=s.finished?"Матч завершён":session.Paused?"Пауза":session.Display.activePlayer==own?"Ваш ход":"Ход противника";
+            ShadowText(new Rect(canvasWidth/2-180,22,360,32),turn,center);
+            float wind=s.wind*view.Direction;
+            ShadowText(new Rect(canvasWidth/2-175,57,350,25),"Ход "+s.turnId+"   •   ветер "+(wind<0?"← ":"→ ")+Mathf.Abs(wind).ToString("0.0")+(s.blizzard?" • метель":""),new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
+            DrawOpponentIndicator();
             bool modal=confirmExit||session.Paused||s.finished;
             if(LetterButton(MenuButton,"М",!modal)){CancelAim();confirmExit=true;}
-            bool can=session.CanAct&&!modal;
+            bool can=session.CanAct&&view.Ready&&!modal;
             var me=s.players[session.MyPlayer];
             if(LetterButton(SnowButton,"С",can,selected==ActionKind.Snowball))ChooseSnow();
             if(LetterButton(IceButton,"Л",can&&(me.iceReady||me.warmth>=b.iceCost),selected==ActionKind.ThrowIce,me.iceReady))ChooseIce();
@@ -233,24 +244,36 @@ namespace FrostDuel {
             string hint=aim.Active?(aim.CanRelease?"Отпустите для броска • к началу жеста — отмена":"Тяните назад и вниз • отпустить сейчас — отмена"):
                 session.CanAct?"С — снежок   Л — лёд   У — утеплиться. Тяните назад.":"Ожидайте завершения хода";
             Round(new Rect(24,658,Mathf.Min(canvasWidth-390,720),38),14,panel);Text(new Rect(38,658,Mathf.Min(canvasWidth-416,696),38),hint,small,muted);
-            if(Time.unscaledTime<noticeUntil&&!aim.Active&&!string.IsNullOrEmpty(session.Notice)) {
-                Round(new Rect(canvasWidth/2-325,118,650,40),14,panel);Text(new Rect(canvasWidth/2-311,118,622,40),session.Notice,new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
+            string resultNotice=session.ImpactState!=null?session.Animation.message:session.Notice;
+            if((session.ImpactState!=null||Time.unscaledTime<noticeUntil&&!session.Busy)&&!aim.Active&&!string.IsNullOrEmpty(resultNotice)) {
+                ShadowText(new Rect(canvasWidth/2-311,118,622,40),resultNotice,new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
             }
             if(session.Paused)Modal("Соединение потеряно",session.Notice+"\nПовторите подключение сначала на ведущем, затем на втором телефоне.","Повторить подключение",session.Retry);
-            else if(s.finished)Modal(s.winner<0?"Ничья":"Победил игрок "+(s.winner+1),"Снежная дуэль завершена.","Вернуться в меню",BackToMenu,false);
+            else if(s.finished&&!session.Busy)Modal(s.winner<0?"Ничья":s.winner==session.MyPlayer?"Вы победили":"Победил противник","Снежная дуэль завершена.","Вернуться в меню",BackToMenu,false);
             else if(confirmExit)Modal("Завершить матч?","При выходе в меню текущее состояние будет потеряно.","Завершить и выйти",BackToMenu,false,true);
         }
-        void Stats(PlayerState p,Rect r,int player) {
+        void ShadowText(Rect r,string value,GUIStyle style=null,Color? color=null) {
+            var shadow=new Rect(r.x+1.5f,r.y+2,r.width,r.height);Text(shadow,value,style,outline);Text(r,value,style,color);
+        }
+        void DrawOpponentIndicator() {
+            if(!OpponentOffscreen)return;
+            var enemy=session.Display.players[1-session.MyPlayer];var own=session.Display.players[session.MyPlayer];
+            Vector2 at=World(new Vector2(enemy.x,enemy.groundY+1));
+            var r=new Rect(canvasWidth-92,Mathf.Clamp(at.y-48,220,485),76,88);
+            Round(r,18,panel);DrawFigure(new Vector2(r.center.x-7,r.y+57),25,1-session.MyPlayer,enemy.iceReady,enemy.warmth==0,25,-1);
+            ShadowText(new Rect(r.x,r.y+59,r.width,24),Mathf.Abs(enemy.x-own.x).ToString("0")+" м  ›",new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
+        }
+        void Stats(PlayerState p,Rect r,int player,bool own) {
             Round(r,19,panel);Color c=player==0?cyan:orange;
-            Text(new Rect(r.x+16,r.y+6,r.width-32,24),"ИГРОК "+(player+1)+(p.iceReady?"    ЛЁД ГОТОВ":""),small,c);
+            ShadowText(new Rect(r.x+16,r.y+6,r.width-32,24),"ИГРОК "+(player+1)+(p.iceReady?"    ЛЁД ГОТОВ":""),small,c);
             Bar(new Rect(r.x+16,r.y+36,180,14),(float)p.health/session.Balance.maxHealth,c);
-            Text(new Rect(r.x+210,r.y+27,112,29),"Жизнь "+p.health,small);
+            ShadowText(new Rect(r.x+210,r.y+27,112,29),"Жизнь "+p.health,small);
             Bar(new Rect(r.x+16,r.y+64,180,12),(float)p.warmth/session.Balance.maxWarmth,new Color(1,.74f,.36f));
-            Text(new Rect(r.x+210,r.y+54,112,29),p.warmth==0?"Мороз • 0":"Тепло "+p.warmth,small,p.warmth==0?cyan:ink);
+            ShadowText(new Rect(r.x+210,r.y+54,112,29),p.warmth==0?"Мороз • 0":"Тепло "+p.warmth,small,p.warmth==0?cyan:ink);
         }
         void Bar(Rect r,float value,Color c){Round(r,r.height/2,new Color(.18f,.31f,.38f));if(value>0)Round(new Rect(r.x,r.y,r.width*Mathf.Clamp01(value),r.height),r.height/2,c);}
-        void DrawFigure(Vector2 feet,float k,int side,bool ice,bool frozen,float angle) {
-            Color coat=side==0?cyan:orange;int d=side==0?1:-1;
+        void DrawFigure(Vector2 feet,float k,int side,bool ice,bool frozen,float angle,int facing=0) {
+            Color coat=side==0?cyan:orange;int d=facing==0?(side==0?1:-1):facing;
             Func<float,float,Vector2> P=(x,y)=>feet+new Vector2(x*d*k,-y*k);
             Color dark=outline,fur=new Color(.88f,.94f,.90f),skin=new Color(1,.80f,.64f);
             // Legs and boots support the exact fixed feet used by the collision model.
@@ -292,17 +315,14 @@ namespace FrostDuel {
             float distance=0;Vector2 previous=preview.path[0];int count=0;
             Color color=selected==ActionKind.ThrowIce?new Color(.61f,.98f,1):Color.white;
             Dot(World(previous),7,outline);Dot(World(previous),4.5f,color);
-            foreach(var p in preview.path) {
-                distance+=Vector2.Distance(previous,p);previous=p;if(distance<.42f)continue;distance=0;
+            for(int i=1;i<VisiblePreviewCount;i++) {
+                var p=preview.path[i];distance+=Vector2.Distance(previous,p);previous=p;if(distance<.42f)continue;distance=0;
                 Vector2 at=World(p);if(at.y<123||at.y>715)continue;
-                float radius=Mathf.Lerp(4.5f,2.7f,Mathf.Clamp01(count/70f));count++;
+                float radius=Mathf.Lerp(4.5f,2.7f,Mathf.Clamp01(count/10f));count++;
                 Dot(at,radius+1.4f,new Color(.05f,.20f,.28f,.45f));Dot(at,radius,color);
             }
-            // Anchor is deliberately subdued: it is an input cue, not another projectile.
-            Dot(aim.Anchor,19,new Color(.08f,.21f,.29f,.4f));Dot(aim.Anchor,15,new Color(.70f,.93f,.96f,.35f));
-            Dot(aim.Anchor,11,new Color(.12f,.28f,.36f,.5f));Line(aim.Anchor,aim.Pointer,2,new Color(.8f,.95f,1,.35f));Dot(aim.Pointer,6,new Color(.90f,.98f,1,.65f));
             var me=session.Display.players[session.MyPlayer];Vector2 release=World(Projectile.ReleasePoint(me,session.MyPlayer));
-            float x=Mathf.Clamp(release.x+(session.MyPlayer==0?-230:18),20,canvasWidth-235);
+            float x=Mathf.Clamp(release.x-130,20,canvasWidth-235);
             var box=new Rect(x,Mathf.Clamp(release.y-180,180,520),212,78);
             Round(box,18,panel);
             Text(new Rect(box.x+12,box.y+5,188,36),Mathf.RoundToInt(aim.Power*100)+"%   /   "+Projectile.LaunchAngle(session.Display,previewAction,session.Balance).ToString("0")+"°",new GUIStyle(center){fontSize=27,fontStyle=FontStyle.Bold});

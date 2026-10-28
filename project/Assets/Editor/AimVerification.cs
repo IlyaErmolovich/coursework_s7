@@ -10,11 +10,11 @@ namespace FrostDuel.Editor {
             checks.Clear();var b=ScriptableObject.CreateInstance<BalanceSettings>();
             try {
                 foreach(int side in new[]{0,1}) {
-                    var g=new AimGesture();var start=new Vector2(640,330);var end=start+new Vector2(side==0?-160:160,120);
-                    g.Begin(start,side);for(int i=0;i<60;i++)g.Move(end,1f/60);
+                    var g=new AimGesture();var start=new Vector2(640,330);var end=start+new Vector2(-160,120);
+                    g.Begin(start);for(int i=0;i<60;i++)g.Move(end,1f/60);
                     Check(g.ReleaseAllowed(end)&&Mathf.Abs(g.Angle-36.8699f)<.01f&&Mathf.Abs(g.Power-200f/240)<.001f,"Backward pull maps to forward throw, player "+side);
                     g.Move(start,1f/60);Check(!g.ReleaseAllowed(start),"Return to anchor cancels, player "+side);
-                    g.Move(start+new Vector2(side==0?120:-120,80),1f/60);Check(!g.CanRelease,"Forward drag cannot fire, player "+side);
+                    g.Move(start+new Vector2(120,80),1f/60);Check(!g.CanRelease,"Forward drag cannot fire, player "+side);
                     g.Cancel();Check(!g.Active,"Explicit cancel, player "+side);
                 }
                 foreach(var screen in new[]{new Vector2(1280,720),new Vector2(2340,1080),new Vector2(1920,1080)}) {

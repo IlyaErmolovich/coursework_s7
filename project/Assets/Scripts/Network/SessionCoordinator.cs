@@ -19,6 +19,8 @@ namespace FrostDuel {
         public bool Paused {get;private set;}
         public bool Started => Display!=null;
         public int MyPlayer => Local && Display!=null ? Display.activePlayer : HostRole?0:1;
+        // Read-only result for the impact hold; Display/turn readiness advance only after animation.
+        public GameSession ImpactState => Animation!=null && pending!=null && AnimationTime >= (Animation.path.Length>1?(Animation.path.Length-1)*Animation.step:0) ? pending : null;
         public bool Busy => Animation!=null || pending!=null;
         public bool CanAct => Started && !Display.finished && !Paused && !Busy && Display.activePlayer==MyPlayer && (Local || (transport.IsConnected && (HostRole?peerReady==Display.turnId:ready)));
         public string Notice {get;private set;}="";
