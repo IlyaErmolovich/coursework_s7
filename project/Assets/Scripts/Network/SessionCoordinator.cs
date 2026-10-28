@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 namespace FrostDuel {
     [Serializable] public sealed class Packet {
-        public int protocol=1;
+        public int protocol=2;
         public string type,token,sessionId,balanceJson;
         public int turnId;
         public GameSession state;
@@ -66,7 +66,7 @@ namespace FrostDuel {
             Packet p;
             try {p=JsonUtility.FromJson<Packet>(json);}catch{Notice="Некорректное сообщение";return;}
             if(p==null||p.type=="ping")return;
-            if(p.protocol!=1){Notice="Версии игры несовместимы";transport.Drop();return;}
+            if(p.protocol!=2){Notice="Версии игры несовместимы";transport.Drop();return;}
             if(HostRole) {
                 if(p.type=="hello") {
                     if(string.IsNullOrEmpty(p.token)|| (peerToken!=null && (peerToken!=p.token || p.sessionId!=rules.State?.sessionId))) {transport.Drop();Notice="Это другой матч. Вернитесь в меню на обоих телефонах.";return;}
@@ -97,9 +97,9 @@ namespace FrostDuel {
             return Finite(s.wind);
         }
         static bool Finite(float f)=>!float.IsNaN(f)&&!float.IsInfinity(f);
-        public void Act(ActionKind kind,float angle=45,float power=.6f) {
+        public void Act(ActionKind kind,float angle=45,float power=.6f,float aimPhase=0) {
             if(!CanAct||requestPending)return;
-            var a=new PlayerAction{sessionId=Display.sessionId,turnId=Display.turnId,player=MyPlayer,kind=kind,angle=angle,power=power};
+            var a=new PlayerAction{sessionId=Display.sessionId,turnId=Display.turnId,player=MyPlayer,kind=kind,angle=angle,power=power,aimPhase=aimPhase};
             if(HostRole)Commit(a);else {requestPending=true;ready=false;requestAt=Time.realtimeSinceStartup;Send(new Packet{type="action",action=a});}
         }
         void Commit(PlayerAction a) {

@@ -8,7 +8,7 @@ namespace FrostDuel {
         public int warmActionGain = 35, passiveWarmthGain = 6, quietTurnsForRecovery = 2, freezeDamage = 7;
         public float gravity = 9.8f, minSpeed = 5, maxSpeed = 19, maxWind = 3.2f;
         public float snowWindFactor = 1, iceWindFactor = .16f, blizzardMultiplier = 1.5f;
-        public float frozenAimDegrees = 5, snowCraterRadius = .85f, iceCraterRadius = 1.35f;
+        public float frozenAimDegrees = 2, snowCraterRadius = .85f, iceCraterRadius = 1.35f;
         public float worldWidth = 32, worldHeight = 18, characterInset = 4, headRadius = .34f;
         public float bodyRadius = .44f, bodyHeight = 1.15f, platformHalfWidth = .6f;
         public int terrainSamples = 321;
@@ -20,6 +20,7 @@ namespace FrostDuel {
             characterInset = Mathf.Clamp(characterInset, 3, worldWidth / 4); terrainSamples = Mathf.Clamp(terrainSamples, 101, 601);
             gravity = Mathf.Clamp(gravity, 1, 30); minSpeed = Mathf.Clamp(minSpeed, 1, 10); maxSpeed = Mathf.Clamp(maxSpeed, minSpeed+1, 30);
             maxWind = Mathf.Clamp(maxWind, 0, 6); physicsStep = Mathf.Clamp(physicsStep, .005f, .025f); maxFlightSeconds = Mathf.Clamp(maxFlightSeconds, 3, 12);
+            frozenAimDegrees = Mathf.Clamp(frozenAimDegrees,0,5);
             quietTurnsForRecovery = Mathf.Max(1, quietTurnsForRecovery);
             snowDamage = Mathf.Max(0, snowDamage); snowWarmthDamage = Mathf.Max(0, snowWarmthDamage);
             iceBodyDamage = Mathf.Max(0, iceBodyDamage); iceHeadDamage = Mathf.Max(0, iceHeadDamage); iceWarmthDamage = Mathf.Max(0, iceWarmthDamage);

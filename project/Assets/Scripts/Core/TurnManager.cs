@@ -18,6 +18,7 @@ namespace FrostDuel {
             else if(!Enum.IsDefined(typeof(ActionKind),a.kind))error="Неизвестное действие";
             else if(a.kind==ActionKind.PrepareIce && (s.players[a.player].iceReady||s.players[a.player].warmth<balance.iceCost))error="Недостаточно тепла или лёд уже готов";
             else if(a.kind==ActionKind.ThrowIce && !s.players[a.player].iceReady)error="Лёд не подготовлен";
+            else if(float.IsNaN(a.aimPhase)||float.IsInfinity(a.aimPhase)||a.aimPhase<0||a.aimPhase>Mathf.PI*2)error="Неверная фаза прицела";
             else if(float.IsNaN(a.angle)||float.IsInfinity(a.angle)||float.IsNaN(a.power)||float.IsInfinity(a.power)||a.angle<5||a.angle>85||a.power<0||a.power>1)error="Неверные параметры броска";
             return error.Length==0;
         }

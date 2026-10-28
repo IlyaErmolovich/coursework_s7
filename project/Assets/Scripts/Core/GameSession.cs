@@ -21,6 +21,7 @@ namespace FrostDuel {
         public int turnId, player;
         public ActionKind kind;
         public float angle, power;
+        public float aimPhase; // Cold sway sampled at release; shared by preview and authority.
     }
     [Serializable] public sealed class ShotResult {
         public Vector2[] path = Array.Empty<Vector2>();

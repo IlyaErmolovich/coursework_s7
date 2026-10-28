@@ -12,7 +12,10 @@ namespace FrostDuel {
         Rect safe;
         float scale;
         Vector2 origin;
-        bool dragging;
+        readonly AimGesture aim=new AimGesture();
+        bool dragging {get=>aim.Active;set {if(!value)aim.Cancel();}}
+        PlayerAction previewAction;
+        ShotResult preview;
         int finger=-1;
         ActionKind selected=ActionKind.Snowball;
         float angle=45,power=.6f;
@@ -34,10 +37,9 @@ namespace FrostDuel {
             if(Array.IndexOf(Environment.GetCommandLineArgs(),"-localDemo")>=0){session.StartLocal();screen=ScreenKind.Game;}
         }
         void Layout() {
-            safe=Screen.safeArea;scale=Mathf.Min(safe.width/1280f,safe.height/720f);
-            origin=new Vector2(safe.x+(safe.width-1280*scale)/2,Screen.height-safe.yMax+(safe.height-720*scale)/2);
+            safe=Screen.safeArea;var viewport=new DuelViewport(safe,Screen.height);scale=viewport.Scale;origin=viewport.Origin;
         }
-        Vector2 Pointer(Vector2 p)=> (new Vector2(p.x,Screen.height-p.y)-origin)/scale;
+        Vector2 Pointer(Vector2 p)=>new DuelViewport(Screen.safeArea,Screen.height).FromScreen(p,Screen.height);
         void Update() {
             Layout();
             if(session.Started)screen=ScreenKind.Game;
@@ -61,16 +63,21 @@ namespace FrostDuel {
             }
         }
         bool InArena(Vector2 p)=>p.x>40 && p.x<1240 && p.y>170 && p.y<575;
-        void BeginAim(Vector2 p){dragging=true;startDrag=aimDrag=p;}
-        void MoveAim(Vector2 p) {
-            aimDrag=p;Vector2 delta=p-startDrag;float forward=delta.x*(session.MyPlayer==0?1:-1);
-            angle=Mathf.Clamp(Mathf.Atan2(-delta.y,Mathf.Max(1,forward))*Mathf.Rad2Deg,5,85);
-            power=Mathf.Clamp01(delta.magnitude/260f);
+        void BeginAim(Vector2 p){if(!session.CanAct||confirmExit||!InArena(p))return;aim.Begin(p,session.MyPlayer);RefreshPreview();}
+        void MoveAim(Vector2 p) {aim.Move(p,Time.unscaledDeltaTime);RefreshPreview();}
+        void RefreshPreview() {
+            if(!aim.Active||session.Display==null)return;
+            angle=aim.Angle;power=aim.Power;
+            previewAction=new PlayerAction{sessionId=session.Display.sessionId,turnId=session.Display.turnId,
+                player=session.MyPlayer,kind=selected,angle=angle,power=power,
+                aimPhase=Mathf.Repeat(Time.unscaledTime*2.2f,Mathf.PI*2)};
+            preview=Projectile.For(selected).Simulate(session.Display,previewAction,session.Balance);
         }
         void EndAim(Vector2 p) {
-            MoveAim(p);dragging=false;
-            if(!InArena(p)||Vector2.Distance(startDrag,p)<25||(p.x-startDrag.x)*(session.MyPlayer==0?1:-1)<10){return;}
-            session.Act(selected,angle,power);
+            bool release=aim.ReleaseAllowed(p)&&InArena(p)&&session.CanAct&&!confirmExit;
+            aim.Cancel();
+            // Commit the most recently displayed trajectory, not a fresh unshown simulation.
+            if(release&&previewAction!=null)session.Act(selected,previewAction.angle,previewAction.power,previewAction.aimPhase);
         }
         void Styles() {
             if(label!=null)return;
@@ -93,7 +100,7 @@ namespace FrostDuel {
             bool hit=GUI.Button(r,text,button);GUI.backgroundColor=Color.white;GUI.enabled=true;return hit;
         }
         void Line(Vector2 a,Vector2 b,float width,Color c) {
-            var matrix=GUI.matrix;GUIUtility.RotateAroundPivot(Mathf.Atan2(b.y-a.y,b.x-a.x)*Mathf.Rad2Deg,a);Fill(new Rect(a.x,a.y-width/2,Vector2.Distance(a,b),width),c);GUI.matrix=matrix;
+            var matrix=GUI.matrix;GUI.matrix=matrix*Matrix4x4.TRS(a,Quaternion.Euler(0,0,Mathf.Atan2(b.y-a.y,b.x-a.x)*Mathf.Rad2Deg),Vector3.one);Fill(new Rect(0,-width/2,Vector2.Distance(a,b),width),c);GUI.matrix=matrix;
         }
         void Menu() {
             Snow(0.6f,false);
@@ -160,7 +167,7 @@ namespace FrostDuel {
             }
             if(Button(new Rect(679,636,280,61),"Утеплиться  +"+b.warmActionGain,session.CanAct)){dragging=false;session.Act(ActionKind.WarmUp);}
             if(Button(new Rect(975,636,273,61),"Отмена прицела",session.CanAct)){dragging=false;selected=ActionKind.Snowball;}
-            if(!dragging&&!session.Busy&&!s.finished)Text(new Rect(280,139,800,30),session.CanAct?"Проведите вверх к сопернику и отпустите для броска":"Ожидайте действия второго игрока",small,muted);
+            if(!dragging&&!session.Busy&&!s.finished)Text(new Rect(280,139,800,30),session.CanAct?"Тяните назад и вниз, отпустите для броска":"Ожидайте действия второго игрока",small,muted);
             if(session.Paused)Modal("Соединение потеряно",session.Notice+"\nНа ведущем нажмите повтор, затем повторите на втором телефоне.","Повторить подключение",()=>session.Retry());
             else if(s.finished)Modal(s.winner<0?"Ничья":"Победил игрок "+(s.winner+1),s.winner==session.MyPlayer?"Вы сохранили преимущество в этой снежной дуэли.":"Матч завершён. Можно начать новую дуэль.","Вернуться в меню",BackToMenu,false);
             else if(confirmExit)Modal("Завершить матч?","Текущее состояние будет потеряно при выходе в меню.","Завершить и выйти",BackToMenu,false,true);
@@ -192,12 +199,15 @@ namespace FrostDuel {
             }
         }
         void DrawAim() {
-            var p=session.Display.players[session.MyPlayer];float jitter=p.warmth==0?Mathf.Sin(Time.unscaledTime*30)*session.Balance.frozenAimDegrees:0;
-            float a=(angle+jitter)*Mathf.Deg2Rad;
-            Vector2 at=World(new Vector2(p.x+(session.MyPlayer==0?.65f:-.65f),p.groundY+1.2f));
-            Vector2 tip=at+new Vector2(Mathf.Cos(a)*(session.MyPlayer==0?1:-1),-Mathf.Sin(a))*(50+power*130);
-            Line(at,tip,3,selected==ActionKind.ThrowIce?Color.cyan:Color.white);Dot(tip,6,Color.white);
-            Dot(startDrag,9,new Color(1,1,1,.35f));Line(startDrag,aimDrag,2,new Color(1,1,1,.25f));
+            if(preview?.path==null)return;
+            float distance=0;Vector2 previous=preview.path[0];
+            Dot(World(previous),6,Color.white);
+            foreach(var p in preview.path) {
+                distance+=Vector2.Distance(previous,p);previous=p;
+                if(distance<.4f)continue;distance=0;
+                var at=World(p);if(at.y>132&&at.y<590)Dot(at,4,selected==ActionKind.ThrowIce?cyan:Color.white);
+            }
+            Dot(aim.Anchor,12,new Color(1,1,1,.25f));Dot(aim.Pointer,7,new Color(1,1,1,.45f));
         }
         void DrawShot(ShotResult shot) {
             if(shot.path==null||shot.path.Length<2)return;

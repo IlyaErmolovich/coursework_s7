@@ -39,7 +39,8 @@ namespace FrostDuel.Editor {
             Configure();EditorUserBuildSettings.buildAppBundle=false;
             Build(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/Duel.unity"},locationPathName="Builds/FrostDuel.apk",target=BuildTarget.Android,options=BuildOptions.None});
         }
-        public static void VerifyAndLinux() { CoreVerification.Run();ProtocolVerification.Run();Linux(); }
+        public static void VerifyAll() { CoreVerification.Run();ProtocolVerification.Run();AimVerification.Run(); }
+        public static void VerifyAndLinux() { VerifyAll();Linux(); }
         public static void Linux() {
             Configure();Build(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/Duel.unity"},locationPathName="Builds/Linux/FrostDuel",target=BuildTarget.StandaloneLinux64,options=BuildOptions.Development});
         }

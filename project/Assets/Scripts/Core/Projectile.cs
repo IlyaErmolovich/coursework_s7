@@ -6,15 +6,14 @@ namespace FrostDuel {
         public abstract float CraterRadius(BalanceSettings b);
         public abstract void Hit(PlayerState target, bool head, BalanceSettings b);
         public static Projectile For(ActionKind kind) => kind == ActionKind.ThrowIce ? (Projectile)new IceProjectile() : new Snowball();
+        public static Vector2 ReleasePoint(PlayerState p,int player) => new Vector2(p.x+(player==0?.65f:-.65f),p.groundY+1.2f);
+        public static float LaunchAngle(GameSession s,PlayerAction a,BalanceSettings b) {
+            float sway=s.players[a.player].warmth==0 ? Mathf.Sin(a.aimPhase)*b.frozenAimDegrees : 0;
+            return Mathf.Clamp(a.angle+sway,5,85);
+        }
         public ShotResult Simulate(GameSession s, PlayerAction a, BalanceSettings b) {
-            PlayerState p=s.players[a.player];
-            float angle=a.angle;
-            if(p.warmth==0) {
-                var r=new System.Random(unchecked(s.seed ^ s.turnId*1151));
-                angle+=((float)r.NextDouble()*2-1)*b.frozenAimDegrees;
-            }
-            float direction=a.player==0?1:-1, radians=angle*Mathf.Deg2Rad;
-            Vector2 pos=new Vector2(p.x+direction*.65f,p.groundY+1.2f);
+            float direction=a.player==0?1:-1, radians=LaunchAngle(s,a,b)*Mathf.Deg2Rad;
+            Vector2 pos=ReleasePoint(s.players[a.player],a.player);
             float speed=Mathf.Lerp(b.minSpeed,b.maxSpeed,a.power);
             Vector2 velocity=new Vector2(direction*Mathf.Cos(radians),Mathf.Sin(radians))*speed;
             float wind=s.wind*WindFactor(b)*(s.blizzard && a.kind==ActionKind.Snowball?b.blizzardMultiplier:1);

@@ -32,7 +32,7 @@ MonoBehaviour:
   snowWindFactor: 1
   iceWindFactor: 0.16
   blizzardMultiplier: 1.5
-  frozenAimDegrees: 5
+  frozenAimDegrees: 2
   snowCraterRadius: 0.85
   iceCraterRadius: 1.35
   worldWidth: 32
