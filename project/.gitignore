@@ -1,0 +1,16 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+.gradle/
+*.csproj
+*.sln
+*.slnx
+
+[Bb]uilds/
+[Bb]uild/
+*.apk
+*.aab
+*.keystore
+*.jks

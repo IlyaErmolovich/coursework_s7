@@ -1,0 +1,25 @@
+# Unity generated files and local test evidence
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Bb]uilds/
+**/[Bb]uild/
+**/[Uu]ser[Ss]ettings/
+**/.gradle/
+**/.vs/
+**/.idea/
+*.csproj
+*.sln
+*.slnx
+*.apk
+*.aab
+*.keystore
+*.jks
+.env
+.env.*
+*.pem
+*.key
+# Course documents are maintained separately
+/пз.docx
+/refs/

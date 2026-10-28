@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 379ffc78fe2fba5d2a7bcf7764a0b620, type: 3}
+  m_Name: Balance
+  m_EditorClassIdentifier: Assembly-CSharp::FrostDuel.BalanceSettings
+  maxHealth: 100
+  initialWarmth: 50
+  maxWarmth: 100
+  iceCost: 10
+  snowDamage: 8
+  snowWarmthDamage: 22
+  iceBodyDamage: 35
+  iceHeadDamage: 60
+  iceWarmthDamage: 8
+  warmActionGain: 35
+  passiveWarmthGain: 6
+  quietTurnsForRecovery: 2
+  freezeDamage: 7
+  gravity: 9.8
+  minSpeed: 5
+  maxSpeed: 19
+  maxWind: 3.2
+  snowWindFactor: 1
+  iceWindFactor: 0.16
+  blizzardMultiplier: 1.5
+  frozenAimDegrees: 5
+  snowCraterRadius: 0.85
+  iceCraterRadius: 1.35
+  worldWidth: 32
+  worldHeight: 18
+  characterInset: 4
+  headRadius: 0.34
+  bodyRadius: 0.44
+  bodyHeight: 1.15
+  platformHalfWidth: 0.6
+  terrainSamples: 321
+  physicsStep: 0.016666668
+  maxFlightSeconds: 8
