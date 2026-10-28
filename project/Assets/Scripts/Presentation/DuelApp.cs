@@ -25,7 +25,7 @@ namespace FrostDuel {
         bool confirmExit;
         float noticeUntil;
         string lastNotice="";
-        readonly Color ink=new Color(.93f,.98f,1),muted=new Color(.68f,.83f,.88f),panel=new Color(.055f,.16f,.23f,.93f);
+        readonly Color ink=new Color(.93f,.98f,1),muted=new Color(.68f,.83f,.88f),panel=new Color(.055f,.16f,.23f);
         readonly Color cyan=new Color(.22f,.83f,.83f),orange=new Color(1,.59f,.31f),outline=new Color(.07f,.20f,.28f);
         public SessionCoordinator Session=>session;
         public bool IsAiming=>aim.Active;
@@ -164,7 +164,7 @@ namespace FrostDuel {
             Dot(new Vector2(canvasWidth*.76f,181),44,new Color(.67f,.88f,.90f,.12f));
             Dot(new Vector2(canvasWidth*.76f,181),30,new Color(.86f,.95f,.92f,.8f));
             Image(new Rect(0,240,canvasWidth,400),art.FarRidge,Color.white);
-            Image(new Rect(0,385,canvasWidth,270),art.NearRidge,Color.white);
+            Image(new Rect(0,385,canvasWidth,335),art.NearRidge,Color.white);
             for(int i=0;i<14;i++)Pine(new Vector2(i*canvasWidth/13,623+(i%3)*8),35+i%4*15,new Color(.15f,.35f,.41f,.7f));
         }
         void Pine(Vector2 foot,float h,Color color) {
@@ -226,7 +226,6 @@ namespace FrostDuel {
             int own=session.MyPlayer,enemy=1-own;
             Stats(s.players[own],new Rect(24,18,332,92),own,true);
             Stats(s.players[enemy],new Rect(canvasWidth-356,18,332,92),enemy,false);
-            Round(new Rect(canvasWidth/2-190,18,380,78),20,panel);
             string turn=s.finished?"Матч завершён":session.Paused?"Пауза":session.Display.activePlayer==own?"Ваш ход":"Ход противника";
             ShadowText(new Rect(canvasWidth/2-180,22,360,32),turn,center);
             float wind=s.wind*view.Direction;
@@ -239,11 +238,8 @@ namespace FrostDuel {
             if(LetterButton(SnowButton,"С",can,selected==ActionKind.Snowball))ChooseSnow();
             if(LetterButton(IceButton,"Л",can&&(me.iceReady||me.warmth>=b.iceCost),selected==ActionKind.ThrowIce,me.iceReady))ChooseIce();
             if(LetterButton(WarmButton,"У",can)){CancelAim();session.Act(ActionKind.WarmUp);}
-            string ice=me.iceReady?"Лёд готов • Л: выбрать бросок":me.warmth<b.iceCost?"Лёд: нужно "+b.iceCost+" тепла":"Л: подготовить лёд • −"+b.iceCost+" тепла";
+            string ice=me.iceReady?(selected==ActionKind.ThrowIce?"Л: бросок льда • выбран":"Лёд готов • Л: выбрать бросок"):me.warmth<b.iceCost?"Лёд: нужно "+b.iceCost+" тепла":"Л: подготовить лёд • −"+b.iceCost+" тепла";
             Round(new Rect(canvasWidth-350,590,326,30),12,panel);Text(new Rect(canvasWidth-342,590,310,30),ice,small,me.iceReady?cyan:muted);
-            string hint=aim.Active?(aim.CanRelease?"Отпустите для броска • к началу жеста — отмена":"Тяните назад и вниз • отпустить сейчас — отмена"):
-                session.CanAct?"С — снежок   Л — лёд   У — утеплиться. Тяните назад.":"Ожидайте завершения хода";
-            Round(new Rect(24,658,Mathf.Min(canvasWidth-390,720),38),14,panel);Text(new Rect(38,658,Mathf.Min(canvasWidth-416,696),38),hint,small,muted);
             string resultNotice=session.ImpactState!=null?session.Animation.message:session.Notice;
             if((session.ImpactState!=null||Time.unscaledTime<noticeUntil&&!session.Busy)&&!aim.Active&&!string.IsNullOrEmpty(resultNotice)) {
                 ShadowText(new Rect(canvasWidth/2-311,118,622,40),resultNotice,new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
@@ -264,8 +260,8 @@ namespace FrostDuel {
             ShadowText(new Rect(r.x,r.y+59,r.width,24),Mathf.Abs(enemy.x-own.x).ToString("0")+" м  ›",new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
         }
         void Stats(PlayerState p,Rect r,int player,bool own) {
-            Round(r,19,panel);Color c=player==0?cyan:orange;
-            ShadowText(new Rect(r.x+16,r.y+6,r.width-32,24),"ИГРОК "+(player+1)+(p.iceReady?"    ЛЁД ГОТОВ":""),small,c);
+            Color c=player==0?cyan:orange;
+            ShadowText(new Rect(r.x+16,r.y+6,r.width-32,24),(own?"Вы":"Противник")+(p.iceReady?"    ЛЁД ГОТОВ":""),small,c);
             Bar(new Rect(r.x+16,r.y+36,180,14),(float)p.health/session.Balance.maxHealth,c);
             ShadowText(new Rect(r.x+210,r.y+27,112,29),"Жизнь "+p.health,small);
             Bar(new Rect(r.x+16,r.y+64,180,12),(float)p.warmth/session.Balance.maxWarmth,new Color(1,.74f,.36f));
