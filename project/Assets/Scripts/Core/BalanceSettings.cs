@@ -9,7 +9,7 @@ namespace FrostDuel {
         public float gravity = 9.8f, minSpeed = 5, maxSpeed = 19, maxWind = 3.2f;
         public float snowWindFactor = 1, iceWindFactor = .16f, blizzardMultiplier = 1.5f;
         public float frozenAimDegrees = 2, snowCraterRadius = .85f, iceCraterRadius = 1.35f;
-        public float worldWidth = 32, worldHeight = 18, characterInset = 4, headRadius = .34f;
+        public float worldWidth = 38, worldHeight = 18, characterInset = 4, headRadius = .34f;
         public float bodyRadius = .44f, bodyHeight = 1.15f, platformHalfWidth = .6f;
         public int terrainSamples = 321;
         public float physicsStep = .016666667f, maxFlightSeconds = 8;

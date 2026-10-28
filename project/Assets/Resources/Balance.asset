@@ -35,7 +35,7 @@ MonoBehaviour:
   frozenAimDegrees: 2
   snowCraterRadius: 0.85
   iceCraterRadius: 1.35
-  worldWidth: 32
+  worldWidth: 38
   worldHeight: 18
   characterInset: 4
   headRadius: 0.34
