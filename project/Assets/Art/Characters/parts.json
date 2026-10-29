@@ -1,0 +1,244 @@
+{
+  "parts": [
+    {
+      "variant": "red",
+      "name": "Head",
+      "width": 403,
+      "height": 409,
+      "pivotX": 0.5,
+      "pivotY": 0.06
+    },
+    {
+      "variant": "red",
+      "name": "Torso",
+      "width": 275,
+      "height": 191,
+      "pivotX": 0.5,
+      "pivotY": 0.24
+    },
+    {
+      "variant": "red",
+      "name": "Scarf",
+      "width": 422,
+      "height": 246,
+      "pivotX": 0.66,
+      "pivotY": 0.59
+    },
+    {
+      "variant": "red",
+      "name": "ScarfFront",
+      "width": 422,
+      "height": 246,
+      "pivotX": 0.66,
+      "pivotY": 0.59
+    },
+    {
+      "variant": "red",
+      "name": "UpperArmL",
+      "width": 157,
+      "height": 178,
+      "pivotX": 0.7,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "ForearmL",
+      "width": 145,
+      "height": 175,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "MittenL",
+      "width": 130,
+      "height": 127,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "ForearmR",
+      "width": 148,
+      "height": 176,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "MittenR",
+      "width": 122,
+      "height": 123,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "UpperArmR",
+      "width": 153,
+      "height": 186,
+      "pivotX": 0.3,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "ThighL",
+      "width": 144,
+      "height": 155,
+      "pivotX": 0.59,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "ThighR",
+      "width": 137,
+      "height": 162,
+      "pivotX": 0.41,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "BootL",
+      "width": 185,
+      "height": 192,
+      "pivotX": 0.68,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "red",
+      "name": "BootR",
+      "width": 187,
+      "height": 192,
+      "pivotX": 0.32,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "Head",
+      "width": 399,
+      "height": 410,
+      "pivotX": 0.5,
+      "pivotY": 0.06
+    },
+    {
+      "variant": "teal",
+      "name": "Torso",
+      "width": 314,
+      "height": 198,
+      "pivotX": 0.5,
+      "pivotY": 0.24
+    },
+    {
+      "variant": "teal",
+      "name": "Scarf",
+      "width": 458,
+      "height": 258,
+      "pivotX": 0.66,
+      "pivotY": 0.59
+    },
+    {
+      "variant": "teal",
+      "name": "ScarfFront",
+      "width": 458,
+      "height": 258,
+      "pivotX": 0.66,
+      "pivotY": 0.59
+    },
+    {
+      "variant": "teal",
+      "name": "UpperArmL",
+      "width": 176,
+      "height": 206,
+      "pivotX": 0.7,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "ForearmL",
+      "width": 153,
+      "height": 198,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "MittenL",
+      "width": 141,
+      "height": 141,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "ForearmR",
+      "width": 155,
+      "height": 195,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "MittenR",
+      "width": 144,
+      "height": 141,
+      "pivotX": 0.5,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "UpperArmR",
+      "width": 176,
+      "height": 206,
+      "pivotX": 0.3,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "ThighL",
+      "width": 156,
+      "height": 176,
+      "pivotX": 0.59,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "ThighR",
+      "width": 155,
+      "height": 173,
+      "pivotX": 0.41,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "BootL",
+      "width": 214,
+      "height": 188,
+      "pivotX": 0.68,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "BootR",
+      "width": 213,
+      "height": 189,
+      "pivotX": 0.32,
+      "pivotY": 0.88
+    },
+    {
+      "variant": "teal",
+      "name": "PocketL",
+      "width": 111,
+      "height": 103,
+      "pivotX": 0.5,
+      "pivotY": 0.5
+    },
+    {
+      "variant": "teal",
+      "name": "PocketR",
+      "width": 74,
+      "height": 91,
+      "pivotX": 0.5,
+      "pivotY": 0.5
+    }
+  ]
+}
