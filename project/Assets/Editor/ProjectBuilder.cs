@@ -16,7 +16,7 @@ namespace FrostDuel.Editor {
             EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/Scenes/Duel.unity",true)};
             PlayerSettings.companyName="Coursework";PlayerSettings.productName="Снежная дуэль";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android,"by.psu.frostduel");
-            PlayerSettings.bundleVersion="0.3.0";PlayerSettings.Android.bundleVersionCode=3;
+            PlayerSettings.bundleVersion="0.4.0";PlayerSettings.Android.bundleVersionCode=4;
             PlayerSettings.defaultInterfaceOrientation=UIOrientation.LandscapeLeft;
             PlayerSettings.allowedAutorotateToPortrait=false;PlayerSettings.allowedAutorotateToPortraitUpsideDown=false;
             PlayerSettings.allowedAutorotateToLandscapeLeft=true;PlayerSettings.allowedAutorotateToLandscapeRight=true;

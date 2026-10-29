@@ -7,6 +7,7 @@ namespace FrostDuel {
         ScreenKind screen;
         SessionCoordinator session;
         PrimitiveArt art;
+        CharacterPortrait[] characters;
         GUIStyle label,button,title,small,center,letter;
         Font font;
         float scale,canvasWidth=1280,worldScale=DuelView.Scale;
@@ -36,16 +37,17 @@ namespace FrostDuel {
         public Rect WarmButton=>new Rect(canvasWidth-102,630,74,74);
         public Rect MenuButton=>new Rect(canvasWidth-76,128,52,52);
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Boot(){if(FindFirstObjectByType<DuelApp>()==null)new GameObject("Frost Duel").AddComponent<DuelApp>();}
+        static void Boot(){if(FindFirstObjectByType<CharacterWorkshop>()!=null||Array.IndexOf(Environment.GetCommandLineArgs(),"-characterWorkshop")>=0||Array.IndexOf(Environment.GetCommandLineArgs(),"-captureCharacters")>=0)return;if(FindFirstObjectByType<DuelApp>()==null)new GameObject("Frost Duel").AddComponent<DuelApp>();}
         void Awake() {
             Application.targetFrameRate=60;Screen.sleepTimeout=SleepTimeout.NeverSleep;
-            var cam=new GameObject("Camera").AddComponent<Camera>();cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.07f,.19f,.32f);
+            var cam=new GameObject("Camera").AddComponent<Camera>();cam.cullingMask&=~(1<<30);cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.07f,.19f,.32f);
             var b=Resources.Load<BalanceSettings>("Balance");if(b==null)b=ScriptableObject.CreateInstance<BalanceSettings>();
             session=gameObject.AddComponent<SessionCoordinator>();session.Initialize(b);
             font=Resources.Load<Font>("InterfaceFont");art=new PrimitiveArt();Layout();
+            characters=new[]{new CharacterPortrait("TealCharacter",0),new CharacterPortrait("RedCharacter",1)};
             if(Array.IndexOf(Environment.GetCommandLineArgs(),"-localDemo")>=0)session.StartLocal();
         }
-        void OnDestroy(){art?.Dispose();}
+        void OnDestroy(){art?.Dispose();if(characters!=null)foreach(var c in characters)c.Dispose();}
         void Layout(){var v=new DuelViewport(Screen.safeArea,Screen.height);scale=v.Scale;origin=v.Origin;canvasWidth=v.Width;}
         Vector2 Pointer(Vector2 p)=>new DuelViewport(Screen.safeArea,Screen.height).FromScreen(p,Screen.height);
         public Vector2 World(Vector2 p)=>view.Project(p);
@@ -185,8 +187,8 @@ namespace FrostDuel {
 #endif
             float x=canvasWidth-335;
             Ellipse(new Rect(x-155,550,430,55),new Color(.70f,.88f,.91f));
-            DrawFigure(new Vector2(x-65,562),80,0,false,false,25);
-            DrawFigure(new Vector2(x+140,562),80,1,true,false,25);
+            DrawFigure(new Vector2(x-65,562),80,0,false,false,-1);
+            DrawFigure(new Vector2(x+140,562),80,1,true,false,-1);
             Text(new Rect(40,670,900,30),"Оттяни назад. Отпусти. Попади.",small,muted);
         }
         void Lobby() {
@@ -217,7 +219,7 @@ namespace FrostDuel {
             for(int i=0;i<2;i++) {
                 var p=s.players[i];Vector2 feet=World(new Vector2(p.x,p.groundY));
                 float shake=p.warmth==0?Mathf.Sin(Time.unscaledTime*7)*.7f:0;
-                float armAngle=aim.Active&&i==session.MyPlayer&&previewAction!=null?Projectile.LaunchAngle(s,previewAction,b):25;
+                float armAngle=aim.Active&&i==session.MyPlayer&&previewAction!=null?Projectile.LaunchAngle(s,previewAction,b):-1;
                 DrawFigure(feet+new Vector2(shake,0),worldScale,i,p.iceReady,p.warmth==0,armAngle,i==session.MyPlayer?1:-1);
                 if(s.activePlayer==i&&!s.finished){Ellipse(new Rect(feet.x-28,feet.y+4,56,8),new Color(1,1,1,.35f));}
             }
@@ -256,7 +258,7 @@ namespace FrostDuel {
             var enemy=session.Display.players[1-session.MyPlayer];var own=session.Display.players[session.MyPlayer];
             Vector2 at=World(new Vector2(enemy.x,enemy.groundY+1));
             var r=new Rect(canvasWidth-92,Mathf.Clamp(at.y-48,220,485),76,88);
-            Round(r,18,panel);DrawFigure(new Vector2(r.center.x-7,r.y+57),25,1-session.MyPlayer,enemy.iceReady,enemy.warmth==0,25,-1);
+            Round(r,18,panel);DrawFigure(new Vector2(r.center.x-7,r.y+57),25,1-session.MyPlayer,enemy.iceReady,enemy.warmth==0,-1,-1);
             ShadowText(new Rect(r.x,r.y+59,r.width,24),Mathf.Abs(enemy.x-own.x).ToString("0")+" м  ›",new GUIStyle(small){alignment=TextAnchor.MiddleCenter});
         }
         void Stats(PlayerState p,Rect r,int player,bool own) {
@@ -269,7 +271,10 @@ namespace FrostDuel {
         }
         void Bar(Rect r,float value,Color c){Round(r,r.height/2,new Color(.18f,.31f,.38f));if(value>0)Round(new Rect(r.x,r.y,r.width*Mathf.Clamp01(value),r.height),r.height/2,c);}
         void DrawFigure(Vector2 feet,float k,int side,bool ice,bool frozen,float angle,int facing=0) {
-            Color coat=side==0?cyan:orange;int d=facing==0?(side==0?1:-1):facing;
+            int d=facing==0?(side==0?1:-1):facing;
+            float throwPhase=session.Animation?.path?.Length>1&&session.Display.activePlayer==side&&session.AnimationTime<.45f?Mathf.Clamp01(session.AnimationTime/.45f):0;
+            if(characters!=null&&characters[side].Draw(feet,k,d,angle,throwPhase))return;
+            Color coat=side==0?cyan:orange;
             Func<float,float,Vector2> P=(x,y)=>feet+new Vector2(x*d*k,-y*k);
             Color dark=outline,fur=new Color(.88f,.94f,.90f),skin=new Color(1,.80f,.64f);
             // Legs and boots support the exact fixed feet used by the collision model.
